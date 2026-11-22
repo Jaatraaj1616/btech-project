@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OP-to-UG Transition Analysis</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      background-color: #f4f6f8;
+      color: #222;
+      padding: 18px;
+      font-size: 14px;
+    }
+
+    .wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      padding: 20px;
+    }
+
+    .top-bar {
+      border-bottom: 2px solid #1f2937;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .top-bar h1 {
+      font-size: 20px;
+      color: #111827;
+    }
+
+    .top-bar span {
+      font-size: 13px;
+      color: #4b5563;
+    }
+
+    .case-bar {
+      margin-bottom: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .case-bar label {
+      font-weight: bold;
+      margin-right: 6px;
+      color: #374151;
+    }
+
+    .case-btn {
+      padding: 6px 12px;
+      border: 1px solid #9ca3af;
+      background: #f9fafb;
+      color: #1f2937;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .case-btn.active {
+      background: #1f2937;
+      color: #ffffff;
+      border-color: #1f2937;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 850px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .sidebar {
+      background: #f9fafb;
+      border: 1px solid #d1d5db;
+      padding: 14px;
+    }
+
+    .sidebar h2 {
+      font-size: 15px;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #d1d5db;
+      color: #111827;
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    .field-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    .field input[type="range"] {
+      width: 100%;
+    }
+
+    .field small {
+      display: block;
+      color: #6b7280;
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .method-switch {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .method-switch button {
+      flex: 1;
+      padding: 6px;
+      border: 1px solid #9ca3af;
+      background: #ffffff;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .method-switch button.active {
+      background: #374151;
+      color: #ffffff;
+      border-color: #374151;
+    }
+
+    .opt-btn {
+      width: 100%;
+      padding: 8px;
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .opt-btn:hover {
+      background: #1d4ed8;
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 18px;
+    }
+
+    .summary-table th,
+    .summary-table td {
+      border: 1px solid #d1d5db;
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    .summary-table th {
+      background: #f3f4f6;
+      font-size: 12px;
+      color: #374151;
+    }
+
+    .summary-table td {
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 760px) {
+      .charts-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel-box {
+      border: 1px solid #d1d5db;
+      padding: 12px;
+      background: #ffffff;
+    }
+
+    .panel-box h3 {
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #111827;
+    }
+
+    canvas {
+      width: 100%;
+      border: 1px solid #e5e7eb;
+      background: #fcfcfc;
+      display: block;
+    }
+
+    .legend-line {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #4b5563;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .swatch {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-right: 4px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      font-size: 12px;
+    }
+
+    .data-table th,
+    .data-table td {
+      border: 1px solid #d1d5db;
+      padding: 6px 8px;
+      text-align: right;
+    }
+
+    .data-table th:first-child,
+    .data-table td:first-child {
+      text-align: left;
+    }
+
+    .data-table th {
+      background: #f3f4f6;
+    }
+
+    .highlight-row {
+      background-color: #eff6ff;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="top-bar">
+      <h1>Open-Pit to Underground Transition Analysis</h1>
+      <span>Depth, Stripping Ratio &amp; Crown Pillar Evaluation</span>
+    </div>
+
+    <div class="case-bar">
+      <label>Study Case:</label>
+      <button class="case-btn active" onclick="loadCase('base', this)">Base Deposit</button>
+      <button class="case-btn" onclick="loadCase('highStrip', this)">High Waste Stripping</button>
+      <button class="case-btn" onclick="loadCase('weakRock', this)">Weak Rock Mass</button>
+      <button class="case-btn" onclick="loadCase('priceDrop', this)">Price Drop &amp; Support Delay</button>
+    </div>
+
+    <div class="layout">
+      <div class="sidebar">
+        <h2>Input Parameters</h2>
+
+        <div class="field">
+          <div class="field-header">
+            <span>Transition Depth</span>
+            <span id="depthLabel">200 m</span>
+          </div>
+          <input type="range" id="depthInput" min="0" max="6" step="1" value="3" oninput="runModel()" />
+          <small>Depth at which open-pit stops and underground begins.</small>
+          <button class="opt-btn" onclick="findBestDepth()">Find Optimal Transition Depth</button>
+        </div>
+
+        <div class="field">
+          <div class="field-header">
+            <span>Crown Pillar Thickness</span>
+            <span id="pillarLabel">25 m</span>
+          </div>
+          <input type="range" id="pillarInput" min="10" max="50" step="5" value="25" oninput="runModel()" />
+          <small>Rock barrier between pit floor and upper UG stope.</small>
+        </div>
+
+        <div class="field">
+          <div class="field-header">
+            <span>Planning Method</span>
+          </div>
+          <div class="method-switch">
+            <button id="btnInt" class="active" onclick="changeMethod('integrated')">Integrated</button>
+            <button id="btnDis" onclick="changeMethod('disintegrated')">Disintegrated</button>
+          </div>
+          <small id="methodNote">Evaluates combined OP and UG net present value.</small>
+        </div>
+
+        <div class="field">
+          <div class="field-header">
+            <span>Ore Price / Grade Variation</span>
+            <span id="priceLabel">0%</span>
+          </div>
+          <input type="range" id="priceInput" min="-25" max="25" step="5" value="0" oninput="runModel()" />
+          <small>Sensitivity check for grade and commodity price uncertainty.</small>
+        </div>
+
+        <div class="field">
+          <div class="field-header">
+            <span>Support &amp; Shaft Delay Factor</span>
+            <span id="delayLabel">10%</span>
+          </div>
+          <input type="range" id="delayInput" min="0" max="40" step="5" value="10" oninput="runModel()" />
+          <small>Effect of rock bolting, ventilation, and UG development time.</small>
+        </div>
+      </div>
+
+      <div>
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>Decision Output</th>
+              <th>Combined NPV</th>
+              <th>OP / UG Split</th>
+              <th>Crown Pillar Ore Lock</th>
+              <th>Slope / Subsidence Risk</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td id="outDecision">Transition at 200 m</td>
+              <td id="outNpv">$142.5 M</td>
+              <td id="outSplit">OP: $84.0M | UG: $58.5M</td>
+              <td id="outLock">$18.8 M</td>
+              <td id="outRisk">38 / 100 (Moderate)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="charts-row">
+          <div class="panel-box">
+            <h3>Deposit Cross-Section Schematic</h3>
+            <canvas id="sectionCanvas" width="410" height="240"></canvas>
+            <div class="legend-line">
+              <span><i class="swatch" style="background:#d97706;"></i>Open Pit</span>
+              <span><i class="swatch" style="background:#7c3aed;"></i>Crown Pillar</span>
+              <span><i class="swatch" style="background:#059669;"></i>UG Stopes</span>
+              <span><i class="swatch" style="background:#2563eb;"></i>Shaft</span>
+            </div>
+          </div>
+
+          <div class="panel-box">
+            <h3>NPV by Candidate Transition Depth ($M)</h3>
+            <canvas id="npvCanvas" width="410" height="240"></canvas>
+            <div class="legend-line">
+              <span><i class="swatch" style="background:#60a5fa;"></i>Candidate Depth</span>
+              <span><i class="swatch" style="background:#1d4ed8;"></i>Selected Depth</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-box">
+          <h3>Stripping Ratio &amp; Unit Cost vs. Depth</h3>
+          <canvas id="costCanvas" width="840" height="210"></canvas>
+          <div class="legend-line">
+            <span><i class="swatch" style="background:#d97706;"></i>OP Cost ($/t ore)</span>
+            <span><i class="swatch" style="background:#059669;"></i>UG Cost ($/t ore)</span>
+            <span><i class="swatch" style="background:#2563eb;"></i>Stripping Ratio (Waste:Ore)</span>
+          </div>
+
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Bench Depth</th>
+                <th>Ore (Mt)</th>
+                <th>Waste (Mt)</th>
+                <th>Stripping Ratio</th>
+                <th>OP Unit Cost ($/t)</th>
+                <th>UG Unit Cost ($/t)</th>
+                <th>Cumulative NPV ($M)</th>
+              </tr>
+            </thead>
+            <tbody id="benchTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const benches = [
+      { depth: 50,  ore: 4.5, waste: 4.0,  value: 52, opCost: 14, ugCost: 34 },
+      { depth: 100, ore: 4.8, waste: 9.6,  value: 55, opCost: 16, ugCost: 35 },
+      { depth: 150, ore: 5.0, waste: 17.5, value: 58, opCost: 18, ugCost: 36 },
+      { depth: 200, ore: 5.2, waste: 28.6, value: 62, opCost: 20, ugCost: 37 },
+      { depth: 250, ore: 5.4, waste: 43.2, value: 66, opCost: 22, ugCost: 38 },
+      { depth: 300, ore: 5.0, waste: 55.0, value: 70, opCost: 25, ugCost: 40 },
+      { depth: 350, ore: 4.6, waste: 69.0, value: 74, opCost: 28, ugCost: 42 }
+    ];
+
+    let config = {
+      wasteCost: 3.2,
+      baseRockRisk: 20,
+      method: 'integrated'
+    };
+
+    function loadCase(name, btn) {
+      document.querySelectorAll('.case-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      if (name === 'base') {
+        config.wasteCost = 3.2;
+        config.baseRockRisk = 20;
+        document.getElementById('depthInput').value = 3;
+        document.getElementById('pillarInput').value = 25;
+        document.getElementById('priceInput').value = 0;
+        document.getElementById('delayInput').value = 10;
+        changeMethod('integrated');
+      } else if (name === 'highStrip') {
+        config.wasteCost = 4.6;
+        config.baseRockRisk = 22;
+        document.getElementById('depthInput').value = 2;
+        document.getElementById('pillarInput').value = 25;
+        document.getElementById('priceInput').value = 0;
+        document.getElementById('delayInput').value = 10;
+        changeMethod('integrated');
+      } else if (name === 'weakRock') {
+        config.wasteCost = 3.3;
+        config.baseRockRisk = 45;
+        document.getElementById('depthInput').value = 3;
+        document.getElementById('pillarInput').value = 40;
+        document.getElementById('priceInput').value = 0;
+        document.getElementById('delayInput').value = 20;
+        changeMethod('integrated');
+      } else if (name === 'priceDrop') {
+        config.wasteCost = 3.5;
+        config.baseRockRisk = 28;
+        document.getElementById('depthInput').value = 3;
+        document.getElementById('pillarInput').value = 30;
+        document.getElementById('priceInput').value = -15;
+        document.getElementById('delayInput').value = 30;
+        changeMethod('integrated');
+      }
+      runModel();
+    }
+
+    function changeMethod(method) {
+      config.method = method;
+      document.getElementById('btnInt').classList.toggle('active', method === 'integrated');
+      document.getElementById('btnDis').classList.toggle('active', method === 'disintegrated');
+      document.getElementById('methodNote').textContent =
+        method === 'integrated'
+          ? 'Evaluates combined OP and UG net present value.'
+          : 'Maximizes open pit first before considering underground extraction.';
+      runModel();
+    }
+
+    function calculateDepthNpv(tIdx, pillar, pricePct, delayPct) {
+      const r = 0.08;
+      const pMult = 1 + pricePct / 100;
+      const delayMult = 1 - (delayPct / 100) * 0.45;
+      const ugCapex = 22 * (1 + delayPct / 100);
+
+      let opNpv = 0;
+      let ugNpv = 0;
+
+      for (let i = 0; i < benches.length; i++) {
+        const b = benches[i];
+        const disc = Math.pow(1 + r, i + 1);
+        const rev = b.value * pMult;
+
+        if (i <= tIdx) {
+          const sr = b.waste / b.ore;
+          const totalOpCost = b.opCost + sr * config.wasteCost;
+          opNpv += (b.ore * (rev - totalOpCost)) / disc;
+        } else {
+          const ugRec = 0.86;
+          ugNpv += (b.ore * (rev * ugRec - b.ugCost) * delayMult) / disc;
+        }
+      }
+
+      if (tIdx < benches.length - 1) {
+        ugNpv -= ugCapex;
+      }
+
+      const lockedOre = (pillar / 10) * 7.5 * pMult;
+      const disintPenalty = config.method === 'disintegrated' ? 9.5 : 0;
+      const netNpv = opNpv + ugNpv - lockedOre - disintPenalty;
+
+      const riskRaw = config.baseRockRisk + (tIdx + 1) * 6 + delayPct * 0.35 - pillar * 0.85;
+      const risk = Math.max(8, Math.min(96, Math.round(riskRaw)));
+
+      return { opNpv, ugNpv, netNpv, lockedOre, risk };
+    }
+
+    function findBestDepth() {
+      const pillar = Number(document.getElementById('pillarInput').value);
+      const price = Number(document.getElementById('priceInput').value);
+      const delay = Number(document.getElementById('delayInput').value);
+
+      let best = 0;
+      let maxScore = -Infinity;
+
+      for (let i = 0; i < benches.length; i++) {
+        const res = calculateDepthNpv(i, pillar, price, delay);
+        const score = res.netNpv - (res.risk > 70 ? (res.risk - 70) * 1.2 : 0);
+        if (score > maxScore) {
+          maxScore = score;
+          best = i;
+        }
+      }
+
+      document.getElementById('depthInput').value = best;
+      runModel();
+    }
+
+    function runModel() {
+      const idx = Number(document.getElementById('depthInput').value);
+      const pillar = Number(document.getElementById('pillarInput').value);
+      const price = Number(document.getElementById('priceInput').value);
+      const delay = Number(document.getElementById('delayInput').value);
+
+      const d = benches[idx].depth;
+      document.getElementById('depthLabel').textContent = d + ' m';
+      document.getElementById('pillarLabel').textContent = pillar + ' m';
+      document.getElementById('priceLabel').textContent = (price > 0 ? '+' : '') + price + '%';
+      document.getElementById('delayLabel').textContent = delay + '%';
+
+      const cur = calculateDepthNpv(idx, pillar, price, delay);
+      const npvSeries = benches.map((_, i) => calculateDepthNpv(i, pillar, price, delay).netNpv);
+
+      document.getElementById('outNpv').textContent = '$' + cur.netNpv.toFixed(1) + ' M';
+      document.getElementById('outSplit').textContent =
+        `OP: $${cur.opNpv.toFixed(1)}M | UG: $${cur.ugNpv.toFixed(1)}M`;
+      document.getElementById('outLock').textContent = '$' + cur.lockedOre.toFixed(1) + ' M';
+
+      let riskText = 'Low';
+      if (cur.risk >= 65) riskText = 'High';
+      else if (cur.risk >= 40) riskText = 'Moderate';
+      document.getElementById('outRisk').textContent = `${cur.risk} / 100 (${riskText})`;
+
+      if (cur.risk >= 65) {
+        document.getElementById('outDecision').textContent = 'Increase Crown Pillar';
+      } else if (idx === benches.length - 1) {
+        document.getElementById('outDecision').textContent = 'Continue Open-Pit';
+      } else {
+        document.getElementById('outDecision').textContent = `Transition at ${d} m`;
+      }
+
+      renderTable(idx, npvSeries);
+      drawSection(idx, pillar, cur.risk);
+      drawNpvBars(npvSeries, idx);
+      drawCostLines(idx);
+    }
+
+    function renderTable(selectedIdx, npvSeries) {
+      const tbody = document.getElementById('benchTableBody');
+      tbody.innerHTML = '';
+
+      benches.forEach((b, i) => {
+        const sr = b.waste / b.ore;
+        const opTotal = b.opCost + sr * config.wasteCost;
+        const tr = document.createElement('tr');
+        if (i === selectedIdx) tr.className = 'highlight-row';
+
+        tr.innerHTML = `
+          <td>${b.depth} m</td>
+          <td>${b.ore.toFixed(1)}</td>
+          <td>${b.waste.toFixed(1)}</td>
+          <td>${sr.toFixed(2)} : 1</td>
+          <td>$${opTotal.toFixed(1)}</td>
+          <td>$${b.ugCost.toFixed(1)}</td>
+          <td>$${npvSeries[i].toFixed(1)} M</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function drawSection(idx, pillar, risk) {
+      const canvas = document.getElementById('sectionCanvas');
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;
+      const H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      ctx.strokeStyle = '#4b5563';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, 28);
+      ctx.lineTo(W, 28);
+      ctx.stroke();
+
+      ctx.fillStyle = '#374151';
+      ctx.font = '11px Arial';
+      ctx.fillText('Surface (0 m)', 10, 20);
+
+      // Orebody outline
+      ctx.fillStyle = '#e5e7eb';
+      ctx.beginPath();
+      ctx.moveTo(155, 28);
+      ctx.lineTo(210, 28);
+      ctx.lineTo(265, H - 10);
+      ctx.lineTo(210, H - 10);
+      ctx.closePath();
+      ctx.fill();
+
+      const pitY = 55 + idx * 16;
+      const pillarH = Math.max(10, pillar * 0.42);
+      const ugY = pitY + pillarH;
+
+      // Open Pit
+      ctx.fillStyle = 'rgba(217, 119, 6, 0.25)';
+      ctx.strokeStyle = '#d97706';
+      ctx.beginPath();
+      ctx.moveTo(65, 28);
+      ctx.lineTo(300, 28);
+      ctx.lineTo(228, pitY);
+      ctx.lineTo(138, pitY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#92400e';
+      ctx.font = 'bold 11px Arial';
+      ctx.fillText(`Open Pit (${benches[idx].depth} m)`, 144, Math.max(46, pitY - 6));
+
+      if (idx < benches.length - 1) {
+        // Crown Pillar
+        ctx.fillStyle = risk >= 65 ? 'rgba(220, 38, 38, 0.35)' : 'rgba(124, 58, 237, 0.3)';
+        ctx.strokeStyle = risk >= 65 ? '#dc2626' : '#7c3aed';
+        ctx.fillRect(138, pitY, 90, pillarH);
+        ctx.strokeRect(138, pitY, 90, pillarH);
+
+        ctx.fillStyle = '#374151';
+        ctx.font = '10px Arial';
+        ctx.fillText(`Crown Pillar (${pillar} m)`, 236, pitY + pillarH / 2 + 3);
+
+        // Underground workings
+        const bottomY = H - 14;
+        if (bottomY > ugY + 12) {
+          ctx.fillStyle = 'rgba(5, 150, 105, 0.25)';
+          ctx.strokeStyle = '#059669';
+          ctx.fillRect(158, ugY, 76, bottomY - ugY);
+          ctx.strokeRect(158, ugY, 76, bottomY - ugY);
+
+          ctx.strokeStyle = '#2563eb';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(345, 18);
+          ctx.lineTo(345, bottomY - 4);
+          ctx.stroke();
+
+          for (let y = ugY + 12; y < bottomY; y += 20) {
+            ctx.beginPath();
+            ctx.moveTo(234, y);
+            ctx.lineTo(345, y);
+            ctx.stroke();
+          }
+
+          ctx.fillStyle = '#065f46';
+          ctx.font = 'bold 11px Arial';
+          ctx.fillText('UG Stopes', 168, ugY + 16);
+          ctx.fillStyle = '#1d4ed8';
+          ctx.fillText('Shaft', 352, 42);
+        }
+      }
+    }
+
+    function drawNpvBars(values, selectedIdx) {
+      const canvas = document.getElementById('npvCanvas');
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;
+      const H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      const padL = 44, padR = 14, padT = 18, padB = 28;
+      const plotW = W - padL - padR;
+      const plotH = H - padT - padB;
+
+      const maxV = Math.max(50, ...values) * 1.12;
+      const minV = Math.min(0, ...values);
+      const span = maxV - minV || 1;
+      const zeroY = padT + (maxV / span) * plotH;
+
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.lineWidth = 1;
+      for (let g = 0; g <= 4; g++) {
+        const y = padT + (g / 4) * plotH;
+        ctx.beginPath();
+        ctx.moveTo(padL, y);
+        ctx.lineTo(W - padR, y);
+        ctx.stroke();
+
+        ctx.fillStyle = '#4b5563';
+        ctx.font = '10px Arial';
+        ctx.fillText(Math.round(maxV - (g / 4) * span), 8, y + 3);
+      }
+
+      ctx.strokeStyle = '#6b7280';
+      ctx.beginPath();
+      ctx.moveTo(padL, zeroY);
+      ctx.lineTo(W - padR, zeroY);
+      ctx.stroke();
+
+      const slot = plotW / values.length;
+      const barW = slot * 0.55;
+
+      values.forEach((v, i) => {
+        const x = padL + i * slot + (slot - barW) / 2;
+        const h = Math.abs(v / span) * plotH;
+        const y = v >= 0 ? zeroY - h : zeroY;
+
+        ctx.fillStyle = i === selectedIdx ? '#1d4ed8' : '#60a5fa';
+        ctx.fillRect(x, y, barW, Math.max(2, h));
+
+        ctx.fillStyle = '#111827';
+        ctx.font = '10px Arial';
+        ctx.fillText(v.toFixed(0), x + 3, v >= 0 ? y - 4 : y + h + 11);
+
+        ctx.fillStyle = '#4b5563';
+        ctx.fillText(benches[i].depth + 'm', x + 1, H - 10);
+      });
+    }
+
+    function drawCostLines(selectedIdx) {
+      const canvas = document.getElementById('costCanvas');
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;
+      const H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      const padL = 48, padR = 48, padT = 18, padB = 28;
+      const plotW = W - padL - padR;
+      const plotH = H - padT - padB;
+
+      const opSeries = benches.map(b => b.opCost + (b.waste / b.ore) * config.wasteCost);
+      const ugSeries = benches.map(b => b.ugCost);
+      const srSeries = benches.map(b => b.waste / b.ore);
+
+      const maxC = Math.max(...opSeries, ...ugSeries) * 1.15;
+      const maxS = Math.max(...srSeries) * 1.15;
+
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.lineWidth = 1;
+      for (let g = 0; g <= 4; g++) {
+        const y = padT + (g / 4) * plotH;
+        ctx.beginPath();
+        ctx.moveTo(padL, y);
+        ctx.lineTo(W - padR, y);
+        ctx.stroke();
+
+        ctx.fillStyle = '#4b5563';
+        ctx.font = '10px Arial';
+        ctx.fillText('$' + Math.round(maxC * (1 - g / 4)), 10, y + 3);
+        ctx.fillText((maxS * (1 - g / 4)).toFixed(1) + ':1', W - padR + 6, y + 3);
+      }
+
+      const dx = plotW / (benches.length - 1);
+      const markerX = padL + selectedIdx * dx;
+
+      ctx.strokeStyle = '#9ca3af';
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(markerX, padT);
+      ctx.lineTo(markerX, H - padB);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      function drawLine(arr, scale, color) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        arr.forEach((v, i) => {
+          const x = padL + i * dx;
+          const y = padT + (1 - v / scale) * plotH;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        arr.forEach((v, i) => {
+          const x = padL + i * dx;
+          const y = padT + (1 - v / scale) * plotH;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      drawLine(opSeries, maxC, '#d97706');
+      drawLine(ugSeries, maxC, '#059669');
+      drawLine(srSeries, maxS, '#2563eb');
+
+      benches.forEach((b, i) => {
+        const x = padL + i * dx;
+        ctx.fillStyle = '#4b5563';
+        ctx.font = '10px Arial';
+        ctx.fillText(b.depth + 'm', x - 12, H - 8);
+      });
+    }
+
+    runModel();
+  </script>
+</body>
+</html>
